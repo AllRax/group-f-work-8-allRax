@@ -3,17 +3,20 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.util.ArrayList;
 
 public class TaskManager {
     JFrame frame;
     JMenu filemenu, viewMenu;
     JMenuItem homeItem, settingsItem, helpItem;
     private JPanel northPanel, southPanel, westPanel, centerPanel, listPanel, taskPanel;
-    private DefaultListModel<String> contactLisstModel;
+    private DefaultListModel<String> taskListview;
+    private JList taskListView;
+    private JTextField taskField,taskFieldDescription,editdueDate,dueDate,editTaskNameLabel,editTaskDescriptionField;
     private JToggleButton toggleButton = new JToggleButton("DARK MODE");
     private CardLayout cardLayout = new CardLayout();
-
-
+    private ArrayList<Tasks> taskList=new ArrayList<>();
+    private JCheckBox taskCheckBox,edit_checkBox;
     public TaskManager() {
         this.Taskwindow();
     }
@@ -89,7 +92,28 @@ public class TaskManager {
         taskMenu.add(editTask);
         taskMenu.add(deleteTask);
         addTask.addActionListener(e->cardLayout.show(centerPanel,"ADDTASK"));
-        editTask.addActionListener(e->cardLayout.show(centerPanel,"EDIT"));
+        editTask.addActionListener(e-> {
+            int selectedIndex=taskListView.getSelectedIndex();
+            if(selectedIndex>=0&&selectedIndex<taskListview.size()){
+                Tasks selectedTask=taskList.get(selectedIndex);
+                editdueDate.setText(selectedTask.getDueDate());
+                editTaskDescriptionField.setText(selectedTask.getTaskDescription());
+                editTaskNameLabel.setText(selectedTask.getTaskName());
+                edit_checkBox.setSelected(false);
+            }
+            cardLayout.show(centerPanel, "EDIT");
+        });
+        deleteTask.addActionListener(e->{
+
+                        int selected= taskListView.getSelectedIndex();
+                        if(selected>-1&&selected<taskListview.size()){
+                            taskList.remove(selected);
+                            taskListview.remove(selected);
+                            cardLayout.show(centerPanel,"HOME");
+                        }
+
+
+                    });
         return taskMenu;
     }
 
@@ -142,24 +166,23 @@ public class TaskManager {
     //The list part of the contact list
     public JPanel upperList() {
         JPanel up = new JPanel();
-        contactLisstModel = new DefaultListModel<>();
-        JList contactListview = new JList<>(contactLisstModel);
-        contactLisstModel.addElement("Hello");
-        contactListview.setPreferredSize(new Dimension(300, 600));
-        up.add(contactListview);
-        contactListview.setBackground(new Color(176, 196, 222));
+        taskListview = new DefaultListModel<>();
+        taskListView = new JList<>(taskListview);
+        taskListView.setPreferredSize(new Dimension(300, 600));
+        up.add(taskListView);
+        taskListView.setBackground(new Color(176, 196, 222));
         return up;
     }
 
     //the the downwer panel of the contact List
-    public JPanel downerList() {
-        JPanel down = new JPanel();
-        JButton saveTask=new JButton("SAVE TASK");
-        JButton cancel=new JButton("CANCEL");
-        down.add(cancel);
-        down.add(saveTask);
-        return down;
-    }
+//    public JPanel downerList() {
+//        JPanel down = new JPanel();
+//        JButton saveTask=new JButton("SAVE TASK");
+//        JButton cancel=new JButton("CANCEL");
+//        down.add(cancel);
+//        down.add(saveTask);
+//        return down;
+//    }
 
     //task addition method
     public JPanel addTaskPanel() {
@@ -175,8 +198,8 @@ public class TaskManager {
         taskPanel.add(this.taskFieldDescription());
         taskPanel.add(this.DueTaskLabel());
         taskPanel.add(this.DueTaskDate());
-        taskPanel.add(taskStatusLabel());
-        taskPanel.add(taskCheckBox());
+        taskPanel.add(this.taskStatusLabel());
+        taskPanel.add(this.taskCheckBox());
         taskPanel.add(this.CancelEdit());
         taskPanel.add(this.addTaskButton());
         return taskPanel;
@@ -186,6 +209,29 @@ public class TaskManager {
         JButton saveTask=new JButton("SAVE");
         saveTask.setForeground(Color.WHITE);
         saveTask.setBackground(new Color(30,144,255));
+
+
+        saveTask.addActionListener(e->{
+            String taskName=taskField.getText();
+            String taskDescription=taskFieldDescription.getText();
+            String dueTaskDate=dueDate.getText();
+            String status= taskCheckBox.isSelected()?"Completed":"Not Completed";
+            if(!taskName.isBlank()&&!taskDescription.isBlank()&&!dueTaskDate.isBlank()){
+                Tasks newTask=new Tasks(taskName,taskDescription,dueTaskDate,status);
+                taskList.add(newTask);
+                taskListview.addElement(taskName);
+                taskField.setText("");
+                taskFieldDescription.setText("");
+                dueDate.setText("");
+                taskCheckBox.setSelected(false);
+            }
+
+                    cardLayout.show(centerPanel,"HOME");
+
+                }
+
+
+                );
         return saveTask;
     }
 
@@ -199,7 +245,7 @@ public class TaskManager {
     }
 
     public JTextField taskField() {
-        JTextField taskField = new JTextField();
+        taskField = new JTextField();
         return taskField;
     }
 
@@ -211,7 +257,7 @@ public class TaskManager {
     }
 
     public JTextField taskFieldDescription() {
-        JTextField taskFieldDescription = new JTextField();
+         taskFieldDescription = new JTextField();
         return taskFieldDescription;
     }
 
@@ -222,7 +268,7 @@ public class TaskManager {
     }
 
     public JCheckBox taskCheckBox() {
-        JCheckBox taskCheckBox = new JCheckBox();
+         taskCheckBox = new JCheckBox();
         return taskCheckBox;
     }
 
@@ -233,11 +279,11 @@ public class TaskManager {
     }
 
 public JTextField DueTaskDate(){
-        JTextField dueDate=new JTextField();
+         dueDate=new JTextField();
         return dueDate;
 }
 public JTextField editDueDate(){
-    JTextField editdueDate=new JTextField();
+     editdueDate=new JTextField();
     return editdueDate;
 }
     public JPanel settingsPanel() {
@@ -281,27 +327,52 @@ public JTextField editDueDate(){
         JButton comfirmEdit=new JButton("COMFIRM EDIT");
         comfirmEdit.setBackground(new Color(30,144,255));
         comfirmEdit.setForeground(Color.WHITE);
+        comfirmEdit.addActionListener(e->{
+            int selectedIndex=taskListView.getSelectedIndex();
+            if(selectedIndex>=0&&selectedIndex<taskListview.size()){
+                Tasks selectedTask=taskList.get(selectedIndex);
+                selectedTask.setTaskName(editTaskNameLabel.getText());
+                selectedTask.setTaskDescription(editTaskDescriptionField.getText());
+                selectedTask.setDueDate(editdueDate.getText());
+
+                taskCheckBox.setSelected(false);
+                taskList.set(selectedIndex,new Tasks(editTaskNameLabel.getText(),editTaskDescriptionField.getText(),editdueDate.getText(),edit_checkBox.isSelected()?"COMPLETED":"NOT COMPLETED"));
+                taskListview.set(selectedIndex,selectedTask.getTaskName());
+
+                cardLayout.show(centerPanel, "HOME");
+
+                editTaskDescriptionField.setText("");
+                editTaskNameLabel.setText("");
+                editdueDate.setText("");
+            }
+        });
         return comfirmEdit;
     }
     public JButton CancelEdit(){
         JButton cancelEdit=new JButton("CANCEL");
         cancelEdit.setForeground(Color.WHITE);
         cancelEdit.setBackground(new Color(139,0,0));
+        cancelEdit.addActionListener(e->{
+            editTaskDescriptionField.setText("");
+            editTaskNameLabel.setText("");
+            editdueDate.setText("");
+            cardLayout.show(centerPanel,"HOME");
+        });
         return cancelEdit;
     }
 
 
 public JTextField editTaskNameField(){
-        JTextField editTaskNameLabel=new JTextField();
+         editTaskNameLabel=new JTextField();
         return editTaskNameLabel;
 }
     public JTextField editTaskDescriptionField(){
-        JTextField editTaskDescriptionField=new JTextField();
+         editTaskDescriptionField=new JTextField();
         return editTaskDescriptionField;
     }
     public JCheckBox editTaskCheckBox(){
-        JCheckBox checkBox=new JCheckBox();
-        return checkBox;
+        edit_checkBox=new JCheckBox();
+        return edit_checkBox;
 
     }
 
