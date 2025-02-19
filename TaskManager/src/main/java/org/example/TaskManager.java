@@ -205,6 +205,14 @@ public class TaskManager {
         return taskPanel;
     }
 
+    public ArrayList<Tasks> getTaskList() {
+        return taskList;
+    }
+
+    public JList getTaskListView() {
+        return taskListView;
+    }
+
     public JButton addTaskButton(){
         JButton saveTask=new JButton("SAVE");
         saveTask.setForeground(Color.WHITE);
