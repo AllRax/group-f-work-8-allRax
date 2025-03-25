@@ -59,15 +59,15 @@ class TaskManagerTest {
         assertTrue(addTaskPanel.isVisible());
         assertEquals(10, addTaskPanel.getComponentCount());
 
-        // add task button functionality
+
         JButton addTaskButton = (JButton) addTaskPanel.getComponent(9);
         assertNotNull(addTaskButton);
         assertEquals("SAVE", addTaskButton.getText());
 
-        //Add task
+
         taskManager.taskField().setText("Test Task");
         taskManager.taskFieldDescription().setText("Test Description");
-        taskManager.DueTaskDate().setText("2023-12-31");
+        taskManager.DueTaskDate().setText("2025-02-15");
         taskManager.taskCheckBox().setSelected(true);
         addTaskButton.doClick();
 
