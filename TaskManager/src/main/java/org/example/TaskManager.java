@@ -3,6 +3,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.sql.*;
 import java.util.ArrayList;
 
 public class TaskManager {
@@ -17,6 +18,9 @@ public class TaskManager {
     private CardLayout cardLayout = new CardLayout();
     private ArrayList<Tasks> taskList=new ArrayList<>();
     private JCheckBox taskCheckBox,edit_checkBox;
+    private static final String DB_URL = "jdbc:mysql://localhost:3307/tasks";
+    private static final String DB_USER = "root";
+    private static final String DB_PASS =  "";
     public TaskManager() {
         this.Taskwindow();
     }
@@ -107,8 +111,30 @@ public class TaskManager {
 
                         int selected= taskListView.getSelectedIndex();
                         if(selected>-1&&selected<taskListview.size()){
-                            taskList.remove(selected);
-                            taskListview.remove(selected);
+                            String selectedTask = taskListview.getElementAt(selected);
+                            int confirm = JOptionPane.showConfirmDialog(center(), "Are you sure you want to delete this task?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
+
+                            if (confirm == JOptionPane.YES_OPTION) {
+                                try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+                                     PreparedStatement stmt = conn.prepareStatement("DELETE FROM tasks WHERE task_name = ?")) {
+
+                                    stmt.setString(1, selectedTask);
+                                    int rowsDeleted = stmt.executeUpdate();
+
+                                    if (rowsDeleted > 0) {
+                                        JOptionPane.showMessageDialog(center(), "Task deleted successfully!");
+                                        taskList.remove(selected);
+                                        taskListview.remove(selected);
+                                    } else {
+                                        JOptionPane.showMessageDialog(center(), "Task not found in database.");
+                                    }
+
+                                } catch (SQLException ex) {
+                                    ex.printStackTrace();
+                                    JOptionPane.showMessageDialog(center(), "Error deleting task: " + ex.getMessage());
+                                }
+                            }
+
                             cardLayout.show(centerPanel,"HOME");
                         }
 
@@ -226,8 +252,26 @@ public class TaskManager {
             String status= taskCheckBox.isSelected()?"Completed":"Not Completed";
             if(!taskName.isBlank()&&!taskDescription.isBlank()&&!dueTaskDate.isBlank()){
                 Tasks newTask=new Tasks(taskName,taskDescription,dueTaskDate,status);
-                taskList.add(newTask);
-                taskListview.addElement(taskName);
+
+                try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+                     PreparedStatement stmt = conn.prepareStatement(
+                             "INSERT INTO tasks (task_name, task_description, due_date, task_status) VALUES (?, ?, ?, ?)")) {
+
+                    stmt.setString(1, taskName);
+                    stmt.setString(2, taskDescription);
+                    stmt.setString(3, dueTaskDate);
+                    stmt.setString(4, status);
+
+                    int rowsInserted = stmt.executeUpdate();
+                    if (rowsInserted > 0) {
+                        JOptionPane.showMessageDialog(addTaskButton(), "Task saved successfully!");
+                        taskList.add(newTask);
+                        taskListview.addElement(taskName);
+                    }
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(addTaskPanel(), "Error saving task: " + ex.getMessage());
+                }
                 taskField.setText("");
                 taskFieldDescription.setText("");
                 dueDate.setText("");
