@@ -9,7 +9,7 @@ import java.util.ArrayList;
 public class TaskManager {
     JFrame frame;
     JMenu filemenu, viewMenu;
-    JMenuItem homeItem, settingsItem, helpItem;
+    JMenuItem homeItem, settingsItem;
     private JPanel northPanel, southPanel, westPanel, centerPanel, listPanel, taskPanel;
     private DefaultListModel<String> taskListview;
     private JList taskListView;
@@ -112,30 +112,30 @@ public class TaskManager {
                         int selected= taskListView.getSelectedIndex();
                         if(selected>-1&&selected<taskListview.size()){
                             String selectedTask = taskListview.getElementAt(selected);
-                            int confirm = JOptionPane.showConfirmDialog(center(), "Are you sure you want to delete this task?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
 
-                            if (confirm == JOptionPane.YES_OPTION) {
+
                                 try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
                                      PreparedStatement stmt = conn.prepareStatement("DELETE FROM tasks WHERE task_name = ?")) {
 
                                     stmt.setString(1, selectedTask);
                                     int rowsDeleted = stmt.executeUpdate();
+                                    taskList.remove(selected);
+                                    taskListview.remove(selected);
+
 
                                     if (rowsDeleted > 0) {
-                                        JOptionPane.showMessageDialog(center(), "Task deleted successfully!");
-                                        taskList.remove(selected);
-                                        taskListview.remove(selected);
+                                        JOptionPane.showMessageDialog(deleteTask, "Task deleted successfully!");
+                                        cardLayout.show(centerPanel,"ADDTASK");
                                     } else {
-                                        JOptionPane.showMessageDialog(center(), "Task not found in database.");
+                                        JOptionPane.showMessageDialog(deleteTask, "Task not found in database.");
                                     }
 
                                 } catch (SQLException ex) {
                                     ex.printStackTrace();
-                                    JOptionPane.showMessageDialog(center(), "Error deleting task: " + ex.getMessage());
+                                    JOptionPane.showMessageDialog(deleteTask, "Error deleting task: " + ex.getMessage());
                                 }
-                            }
 
-                            cardLayout.show(centerPanel,"HOME");
+
                         }
 
 
@@ -246,37 +246,37 @@ public class TaskManager {
 
 
         saveTask.addActionListener(e->{
-            String taskName=taskField.getText();
-            String taskDescription=taskFieldDescription.getText();
-            String dueTaskDate=dueDate.getText();
-            String status= taskCheckBox.isSelected()?"Completed":"Not Completed";
-            if(!taskName.isBlank()&&!taskDescription.isBlank()&&!dueTaskDate.isBlank()){
-                Tasks newTask=new Tasks(taskName,taskDescription,dueTaskDate,status);
+                    String taskName=taskField.getText();
+                    String taskDescription=taskFieldDescription.getText();
+                    String dueTaskDate=dueDate.getText();
+                    String status= taskCheckBox.isSelected()?"Completed":"Not Completed";
+                    if(!taskName.isBlank()&&!taskDescription.isBlank()&&!dueTaskDate.isBlank()){
+                        Tasks newTask=new Tasks(taskName,taskDescription,dueTaskDate,status);
+                        taskField.setText("");
+                        taskFieldDescription.setText("");
+                        dueDate.setText("");
+                        taskCheckBox.setSelected(false);
+                        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+                             PreparedStatement stmt = conn.prepareStatement(
+                                     "INSERT INTO tasks (task_name, task_description, due_date, task_status) VALUES (?, ?, ?, ?)")) {
 
-                try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
-                     PreparedStatement stmt = conn.prepareStatement(
-                             "INSERT INTO tasks (task_name, task_description, due_date, task_status) VALUES (?, ?, ?, ?)")) {
+                            stmt.setString(1, taskName);
+                            stmt.setString(2, taskDescription);
+                            stmt.setString(3, dueTaskDate);
+                            stmt.setString(4, status);
 
-                    stmt.setString(1, taskName);
-                    stmt.setString(2, taskDescription);
-                    stmt.setString(3, dueTaskDate);
-                    stmt.setString(4, status);
+                            int rowsInserted = stmt.executeUpdate();
+                            if (rowsInserted > 0) {
+                                JOptionPane.showMessageDialog(addTaskButton(), "Task saved successfully!");
+                                taskList.add(newTask);
+                                taskListview.addElement(taskName);
+                            }
+                        } catch (SQLException ex) {
+                            ex.printStackTrace();
+                            JOptionPane.showMessageDialog(addTaskPanel(), "Error saving task: " + ex.getMessage());
+                        }
 
-                    int rowsInserted = stmt.executeUpdate();
-                    if (rowsInserted > 0) {
-                        JOptionPane.showMessageDialog(addTaskButton(), "Task saved successfully!");
-                        taskList.add(newTask);
-                        taskListview.addElement(taskName);
                     }
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(addTaskPanel(), "Error saving task: " + ex.getMessage());
-                }
-                taskField.setText("");
-                taskFieldDescription.setText("");
-                dueDate.setText("");
-                taskCheckBox.setSelected(false);
-            }
 
                     cardLayout.show(centerPanel,"HOME");
 
@@ -390,6 +390,27 @@ public JTextField editDueDate(){
                 taskCheckBox.setSelected(false);
                 taskList.set(selectedIndex,new Tasks(editTaskNameLabel.getText(),editTaskDescriptionField.getText(),editdueDate.getText(),edit_checkBox.isSelected()?"COMPLETED":"NOT COMPLETED"));
                 taskListview.set(selectedIndex,selectedTask.getTaskName());
+                try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+                     PreparedStatement stmt = conn.prepareStatement(
+                             "UPDATE tasks SET task_name = ?, task_description = ?, due_date = ? WHERE task_name = ?")) {
+
+                    stmt.setString(1, editTaskNameLabel.getText());
+                    stmt.setString(2, editTaskDescriptionField.getText());
+                    stmt.setString(3, editdueDate.getText());
+                    stmt.setString(4, selectedTask.getTaskName());
+
+                    int rowsUpdated = stmt.executeUpdate();
+
+                    if (rowsUpdated > 0) {
+                        JOptionPane.showMessageDialog(comfirmEdit, "Task updated successfully!");
+                    } else {
+                        JOptionPane.showMessageDialog(comfirmEdit, "Task not found in database.");
+                    }
+
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(comfirmEdit, "Error updating task: " + ex.getMessage());
+                }
 
                 cardLayout.show(centerPanel, "HOME");
 
