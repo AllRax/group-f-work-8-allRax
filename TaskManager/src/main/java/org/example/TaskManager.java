@@ -383,6 +383,7 @@ public JTextField editDueDate(){
             int selectedIndex=taskListView.getSelectedIndex();
             if(selectedIndex>=0&&selectedIndex<taskListview.size()){
                 Tasks selectedTask=taskList.get(selectedIndex);
+                String oldName = selectedTask.getTaskName();
                 selectedTask.setTaskName(editTaskNameLabel.getText());
                 selectedTask.setTaskDescription(editTaskDescriptionField.getText());
                 selectedTask.setDueDate(editdueDate.getText());
@@ -397,7 +398,7 @@ public JTextField editDueDate(){
                     stmt.setString(1, editTaskNameLabel.getText());
                     stmt.setString(2, editTaskDescriptionField.getText());
                     stmt.setString(3, editdueDate.getText());
-                    stmt.setString(4, selectedTask.getTaskName());
+                    stmt.setString(4, oldName);
 
                     int rowsUpdated = stmt.executeUpdate();
 
